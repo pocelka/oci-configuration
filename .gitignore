@@ -27,3 +27,12 @@ override.tf.json
 
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # example: *tfplan*
+
+# Terraform lock file
+*.hcl
+
+# Environment variables for local execution. In github actions these will be set as variables inside the project.
+env.sh
+
+# Secrets or variables which should be set in TF cloud or using other method. These are just for local testing.
+oci.auto.tfvars

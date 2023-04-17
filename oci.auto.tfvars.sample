@@ -1,0 +1,7 @@
+tenancy_ocid        = ""
+user_ocid           = ""
+oci_key             = <<-EOT
+-----BEGIN PRIVATE KEY-----
+-----END PRIVATE KEY-----
+EOT
+oci_key_fingerprint  = ""
