@@ -47,22 +47,22 @@ jobs:
       id: init
       run: terraform init
 
-    - name: Switch to DEV workspace.
-      id: ws
-      run: terraform workspace select development
+    # - name: Switch to DEV workspace.
+    #   id: ws
+    #   run: terraform workspace select development
 
     # Checks that no errors exists in repository.
     - name: Validate repository.
       id: val
-      run: terraform validate -no-color
+      run: terraform validate
 
     # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
+    - name: Check formatting.
       id: fmt
       run: terraform fmt -check
 
     # Generates an execution plan for Terraform
-    - name: Terraform Plan
+    - name: Compare changes with existing infrastructure.
       id: plan
       run: terraform plan -input=false
 
