@@ -69,7 +69,7 @@ jobs:
       id: plan
       run: |
         terraform plan \
-          -input=false
+          -input=false \
           -var="oci_key_fingerprint=${{ secrets.OCI_KEY_FINGERPRINT }}" \
           -var="tenancy_ocid=${{ secrets.TENANCY_OCID }}" \
           -var="user_ocid=${{ secrets.USER_OCID }}" \
