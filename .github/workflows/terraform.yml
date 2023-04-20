@@ -1,19 +1,20 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
 # with an API token for Terraform Cloud (app.terraform.io). On pull request events, this workflow will run
 # `terraform init`, `terraform fmt`, and `terraform plan` (speculative plan via Terraform Cloud). On push events
-# to the "main" branch, `terraform apply` will be executed.
+# to the "main" or "develop" branch, `terraform apply` will be executed.
 #
 # Documentation for `hashicorp/setup-terraform` is located here: https://github.com/hashicorp/setup-terraform
 
-name: 'TF to OCI - DEV'
+name: 'TF to OCI'
 
 on:
+  pull_request:
+    branches:
+      - develop
   push:
     branches:
       - develop
-
-env:
-  TF_WORKSPACE: development
+      - main
 
 permissions:
   contents: read
@@ -41,19 +42,57 @@ jobs:
       with:
         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
+    # Workaround to set env. variable TF_WORKSPACE dynamically.
+    - name: Determine correct workspace.
+      id: ws
+      run: |
+        plan_only="${{ github.base_ref == 'develop' && github.event_name == 'pull_request' }}"
+        dev="${{ github.ref_name == 'develop' && github.event_name == 'push' }}"
+        prod="${{ github.ref_name == 'main' && github.event_name == 'push' }}"
+
+        if [ "$plan_only" = true ] || [ "$dev" = true ]; then
+          echo "WS=development" >> $GITHUB_ENV
+        fi
+
+        if [ "$prod" = true ]; then
+          echo "WS=production" >> $GITHUB_ENV
+        fi
+
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Initialize TF.
       id: init
       run: terraform init
+      env:
+        TF_WORKSPACE: ${{ env.WS }}
 
     # Checks that no errors exists in repository.
     - name: Validate repository.
       id: val
+      if: github.event_name == 'pull_request'
       run: terraform validate
+      env:
+        TF_WORKSPACE: ${{ env.WS }}
 
-      # On push to "main", build or change infrastructure according to Terraform configuration files
-      # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Check formatting.
+      id: fmt
+      if: github.event_name == 'pull_request'
+      run: terraform fmt -check
+      env:
+        TF_WORKSPACE: ${{ env.WS }}
+
+    # Generates an execution plan for Terraform
+    - name: Compare changes with existing infrastructure.
+      id: plan
+      if: github.event_name == 'pull_request'
+      run: terraform plan -input=false
+      env:
+        TF_WORKSPACE: ${{ env.WS }}
+
     - name: Apply changes to OCI.
       id: apply
-      if: github.ref_name == 'develop' && github.event_name == 'push'
+      if: github.event_name == 'push'
       run: terraform apply -auto-approve -input=false
+      env:
+        TF_WORKSPACE: ${{ env.WS }}
+
