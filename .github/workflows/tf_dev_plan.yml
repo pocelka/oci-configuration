@@ -5,7 +5,7 @@
 #
 # Documentation for `hashicorp/setup-terraform` is located here: https://github.com/hashicorp/setup-terraform
 
-name: 'Terraform to OCI'
+name: 'TF to OCI - plan only'
 
 on:
   pull_request:
